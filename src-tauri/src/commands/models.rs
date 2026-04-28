@@ -212,6 +212,7 @@ pub async fn test_openai_provider(base_url: String, api_key: String) -> Result<P
     
     // Normalize base URL - remove trailing slash
     let base_url = base_url.trim_end_matches('/');
+    let is_minimax_provider = base_url.contains("api.minimax.io") || base_url.contains("api.minimaxi.com");
     
     // Try multiple endpoint patterns since providers have varying API structures:
     // 1. {baseUrl}/models - for providers where user specifies full path (e.g., .../v1 or .../v4)
@@ -280,6 +281,10 @@ pub async fn test_openai_provider(base_url: String, api_key: String) -> Result<P
         }
     }
     
+    if is_minimax_provider {
+        return test_minimax_chat_completion(&client, base_url, &api_key, start).await;
+    }
+    
     // All endpoints failed with 404 or similar
     let latency = start.elapsed().as_millis() as u64;
     Ok(ProviderTestResult {
@@ -288,6 +293,63 @@ pub async fn test_openai_provider(base_url: String, api_key: String) -> Result<P
         latency_ms: Some(latency),
         models_found: None,
     })
+}
+
+async fn test_minimax_chat_completion(
+    client: &reqwest::Client,
+    base_url: &str,
+    api_key: &str,
+    start: std::time::Instant,
+) -> Result<ProviderTestResult, String> {
+    let endpoint = format!("{}/chat/completions", base_url);
+    let payload = serde_json::json!({
+        "model": "MiniMax-M2.7",
+        "messages": [{ "role": "user", "content": "Say OK" }],
+        "max_tokens": 5
+    });
+
+    let response = client
+        .post(&endpoint)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&payload)
+        .send()
+        .await;
+    let latency = start.elapsed().as_millis() as u64;
+
+    match response {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                Ok(ProviderTestResult {
+                    success: true,
+                    message: format!("Connection successful! MiniMax does not expose /models, so chat completion was tested instead. ({}ms)", latency),
+                    latency_ms: Some(latency),
+                    models_found: None,
+                })
+            } else if status.as_u16() == 401 || status.as_u16() == 403 {
+                Ok(ProviderTestResult {
+                    success: false,
+                    message: "Authentication failed - check your API key".to_string(),
+                    latency_ms: Some(latency),
+                    models_found: None,
+                })
+            } else {
+                let error_text = resp.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                Ok(ProviderTestResult {
+                    success: false,
+                    message: format!("MiniMax /models endpoint is unavailable and chat completion test failed ({}): {}", status, error_text),
+                    latency_ms: Some(latency),
+                    models_found: None,
+                })
+            }
+        }
+        Err(e) => Ok(ProviderTestResult {
+            success: false,
+            message: format!("MiniMax chat completion test failed: {}", e),
+            latency_ms: Some(latency),
+            models_found: None,
+        }),
+    }
 }
 
 // Fetch models from all configured OpenAI-compatible providers
