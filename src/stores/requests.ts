@@ -1,5 +1,6 @@
 import { createMemo, createSignal } from "solid-js";
 import { addRequestToHistory, getRequestHistory } from "../lib/tauri";
+import { invalidateQuotaCache } from "../lib/quotaCache";
 
 import type { RequestHistory, RequestLog } from "../lib/tauri";
 
@@ -16,6 +17,10 @@ const [requestHistory, setRequestHistory] = createSignal<RequestHistory>({
 
 // Loading state for initial fetch
 const [isLoading, setIsLoading] = createSignal(false);
+
+// Counter that increments on 429 errors — QuotaWidget listens to auto-refresh
+const [quotaRefreshTrigger, setQuotaRefreshTrigger] = createSignal(0);
+export { quotaRefreshTrigger };
 
 // Derived: recent requests (last 100)
 export const recentRequests = createMemo(() => requestHistory().requests.slice(-100));
@@ -48,6 +53,13 @@ export const totalStats = createMemo(() => ({
 
 // Add a request to the store (and persist)
 export async function addRequest(log: RequestLog): Promise<void> {
+  // Detect 429 Too Many Requests for Antigravity → invalidate quota cache
+  // and trigger QuotaWidget to auto-refresh so the UI shows exhausted quota.
+  if (log.status === 429 && log.provider === "antigravity") {
+    invalidateQuotaCache("antigravity");
+    setQuotaRefreshTrigger((c) => c + 1);
+  }
+
   try {
     // Persist to disk
     await addRequestToHistory(log);

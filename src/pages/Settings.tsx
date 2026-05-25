@@ -237,6 +237,8 @@ export function SettingsPage() {
         { label: "kiro-claude-sonnet-4", value: "kiro-claude-sonnet-4" },
         { label: "kiro-claude-sonnet-4-5", value: "kiro-claude-sonnet-4-5" },
         { label: "kiro-claude-opus-4-5", value: "kiro-claude-opus-4-5" },
+        { label: "kiro-claude-opus-4-6", value: "kiro-claude-opus-4-6" },
+        { label: "kiro-claude-opus-4-7", value: "kiro-claude-opus-4-7" },
         { label: "kiro-claude-haiku-4-5", value: "kiro-claude-haiku-4-5" },
       ],
       openai: [

@@ -1,7 +1,8 @@
-import { createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { useI18n } from "../../../i18n";
 import { getCachedOrFetch } from "../../../lib/quotaCache";
 import { type AntigravityQuotaResult, fetchAntigravityQuota } from "../../../lib/tauri";
+import { quotaRefreshTrigger } from "../../../stores/requests";
 import { BarChart } from "../../charts/BarChart";
 
 interface QuotaWidgetProps {
@@ -34,6 +35,19 @@ export function QuotaWidget(props: QuotaWidgetProps) {
       setLoading(false);
     }
   };
+
+  // Auto-refresh when 429 Too Many Requests is detected (cache invalidated)
+  let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  createEffect(() => {
+    // Track quotaRefreshTrigger reactively so auto-refresh fires on 429
+    quotaRefreshTrigger();
+    // Debounce: don't spam refresh if multiple 429s arrive in the same tick
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      loadQuota(true);
+    }, 500);
+  });
+  onCleanup(() => clearTimeout(refreshTimer));
 
   // Load quota and config when component mounts
   onMount(() => {

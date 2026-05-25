@@ -1,3 +1,47 @@
+# ProxyPal v0.4.37
+
+**Released:** 2026-05-25
+
+## Models, Quota Sync, and Kiro Opus Updates
+
+This release brings model additions, quota reliability improvements, and fixes for the Antigravity/Gemini 3.5 Flash desync issue.
+
+### Models
+
+- **Gemini 3.5 Flash** — added to Antigravity quota display name mapping (was missing entirely)
+- **Kiro Claude Opus 4.6 / 4.7** — added to model selection UI (#218)
+
+### Quota Reliability (Antigravity)
+
+- **429 auto-detection** — when the proxy returns `429 Too Many Requests` for Antigravity, the quota cache is automatically invalidated and fresh quota is fetched (#220)
+- **QuotaWidget auto-refresh** — listens to 429 events and force-refreshes quota data with 500ms debounce, so the UI reflects exhausted quota within seconds
+
+### ProxyPal code changes
+
+- `src-tauri/src/commands/quota.rs` — Gemini 3.5 Flash display name mapping
+- `src/stores/requests.ts` — 429 detection → quota cache invalidation + refresh trigger
+- `src/components/dashboard/quotas/QuotaWidget.tsx` — auto-refresh on 429
+- `src/pages/Settings.tsx` — Kiro Opus 4.6/4.7 model entries
+- `src/components/settings/AdvancedSettings.tsx` — Kiro Opus 4.6/4.7 model entries
+- `src-tauri/Cargo.toml:3` — version 0.4.36 → 0.4.37
+- `src-tauri/tauri.conf.json:4` — version 0.4.36 → 0.4.37
+- `package.json` — version 0.4.36 → 0.4.37
+
+### Issues closed
+
+| # | Description | 
+|---|---|
+| #220 | Quota desync for Gemini 3.5 Flash under Antigravity 2.0 |
+| #218 | OPUS 4.6/4.7 for Kiro |
+| #217 | GPT-5.5 routing (CLIProxyAPI limitation, documented) |
+| #219 | Claude Desktop support (configuration guidance) |
+
+### Verification
+
+- `cargo check` + `tsc --noEmit` — clean
+
+---
+
 # ProxyPal v0.4.36
 
 **Released:** 2026-05-23
