@@ -1,34 +1,31 @@
-# ProxyPal v0.4.39
+# ProxyPal v0.4.40
 
-**Released:** 2026-06-05
+**Released:** 2026-06-06
 
-## Antigravity/Claude Model Overlap Fix
+## Sidecar Upgrade: CLIProxyAPI v7.1.44 → v7.1.47
 
-When both **Antigravity OAuth** and **Claude** credentials coexisted, the sidecar sorted providers alphabetically — meaning `antigravity` took priority over `claude` for overlapping `gemini-claude-*` models. This caused the wrong provider to handle requests for these models.
+This release upgrades the bundled CLIProxyAPI sidecar from **v7.1.44** (June 3) to **v7.1.47** (June 6), picking up 3 upstream releases with pluginhost capabilities, safemode example server, and file-backed request/response logging.
 
-**Fix:** ProxyPal now detects when both credential types are present and injects an `oauth-excluded-models` section into `proxy-config.yaml`, preventing Antigravity from registering `gemini-claude-*` model patterns. The sidecar already supported this config field — it just wasn't being populated.
+### What changed (v7.1.45 → v7.1.47)
 
-Closes [#224](https://github.com/heyhuynhgiabuu/proxypal/issues/224).
+**Plugin system (v7.1.47):**
 
-## Antigravity Gemini 3.1 & 3.5 Model Support
+- **pluginhost capabilities** — command-line flag handling and plugin execution for the plugin host subsystem
 
-- Added missing Antigravity model mappings for Gemini 3.1 and 3.5 model series
-- Updated bundled sidecar binary with expanded model registry entries
+**Safemode (v7.1.46):**
 
-## Multi-File OAuth Auth File Upload
+- **Example API key warning server** — reference implementation for surfacing compromised-key warnings in safemode deployments
 
-The **Auth Files** page now supports uploading **multiple JSON auth files** at once:
+**Logging (v7.1.45):**
 
-- File dialog changed to allow multi-file selection
-- Uploads each file sequentially with **per-file progress indicator**
-- Shows **summary toasts** — success count + per-file error details
-- Provider detection extracted into reusable helper `detectProviderFromFilename`
-- New i18n messages for en, vi, zh-CN
+- **File-backed request/response sources** — enhanced API logging with persistent request/response capture
 
-Closes [#223](https://github.com/heyhuynhgiabuu/proxypal/issues/223).
+**Fixes (v7.1.45):**
 
-## CI & Maintenance
+- **xai orphaned tool_choice** — drops orphaned `tool_choice` when the Claude tools array is empty, preventing replay errors
 
-- Fixed 20 oxlint errors in `AuthFiles.tsx` (missing curly braces after `if` statements, property sort ordering)
-- Fixed i18n object property sort ordering in `en.ts`, `vi.ts`, `zh-CN.ts`
-- Version bumped to **v0.4.39**
+---
+
+## Notes
+
+This is a sidecar-only bump — no ProxyPal UI or API surface changes.
